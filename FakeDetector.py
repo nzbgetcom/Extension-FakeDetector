@@ -190,7 +190,7 @@ def list_all_rars(dir):
 					print(('command: %s' % command))
 				proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				out_tmp, err = proc.communicate()
-				out += out_tmp
+				out += out_tmp.decode()
 				result = proc.returncode
 				if verbose:
 					print(out_tmp)
