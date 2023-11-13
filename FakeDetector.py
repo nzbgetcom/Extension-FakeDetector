@@ -5,7 +5,6 @@
 # Copyright (C) 2014-2016 Andrey Prygunkov <hugbug@users.sourceforge.net>
 # Copyright (C) 2014 Clinton Hall <clintonhall@users.sourceforge.net>
 # Copyright (C) 2014 JVM <jvmed@users.sourceforge.net>
-# Copyright (c) 2023 Denis <denis@nzbget.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +36,7 @@
 # The status "FAILURE/BAD" is passed to other scripts and informs them
 # about failure.
 #
-# PP-Script version: 2.0
+# PP-Script version: 1.7.
 #
 #
 # NOTE: This script requires Python 3.11.x to be installed on your system
