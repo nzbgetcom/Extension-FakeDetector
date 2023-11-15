@@ -315,8 +315,8 @@ def sort_inner_files():
 
 	# Iterate through the list of files to find the last rar-file.
 	# The last is the one with the highest XX in ".partXX.rar" or ".rXX"
-	regex1 = re.compile('.*\.part(\d+)\.rar', re.IGNORECASE)
-	regex2 = re.compile('.*\.r(\d+)', re.IGNORECASE)
+	regex1 = re.compile(r'.*\.part(\d+)\.rar', re.IGNORECASE)
+	regex2 = re.compile(r'.*\.r(\d+)', re.IGNORECASE)
 	file_num = None
 	file_id = None
 	file_name = None
