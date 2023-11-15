@@ -39,7 +39,7 @@
 # PP-Script version: 1.7.
 #
 #
-# NOTE: This script requires Python 3.11.x to be installed on your system
+# NOTE: This script requires Python 3.9.x to be installed on your system
 
 
 ##############################################################################
@@ -128,7 +128,7 @@ def contains_executable(list):
 		if os.path.split(name)[1] != "":
 			name = os.path.split(name)[1]
 		if ext == '.exe' or (ext in exExtensions and not name in allowNames):
-			print(('[INFO] Found executable %s' % item))
+			print('[INFO] Found executable %s' % item)
 			return True
 		else:
 			continue
@@ -146,10 +146,10 @@ def get_latest_file(dir):
 		temp_folder = os.path.dirname(tmp_file_name)
 		if not os.path.exists(temp_folder):
 			os.makedirs(temp_folder)
-			print(('[DETAIL] Created folder ' + temp_folder))
+			print('[DETAIL] Created folder ' + temp_folder)
 		with open(tmp_file_name, "w") as tmp_file:
 			tmp_file.write('')
-			print(('[DETAIL] Created temp file ' + tmp_file_name))
+			print('[DETAIL] Created temp file ' + tmp_file_name)
 		return os.listdir(dir)
 
 # Saves tested files so to not test again
@@ -186,7 +186,7 @@ def list_all_rars(dir):
 			try:
 				command = [unrar(), "vb", dir + '/' + file]
 				if verbose:
-					print(('command: %s' % command))
+					print('command: %s' % command)
 				proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				out_tmp, err = proc.communicate()
 				out += out_tmp.decode()
@@ -194,7 +194,7 @@ def list_all_rars(dir):
 				if verbose:
 					print(out_tmp)
 			except Exception as e:
-				print(('[ERROR] Failed %s: %s' % (file, e)))
+				print('[ERROR] Failed %s: %s' % (file, e))
 				if verbose:
 					traceback.print_exc()
 		tested += file + '\n'
@@ -256,15 +256,16 @@ def call_nzbget_direct(url_command):
 	password = os.environ['NZBOP_CONTROLPASSWORD']
 	
 	# Building http-URL to call the method
-	httpUrl = 'http://%s:%s/jsonrpc/%s' % (host, port, url_command);
+	httpUrl = 'http://%s:%s/jsonrpc/%s' % (host, port, url_command)
 	request = urllib.request.Request(httpUrl)
 
-	base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
-	request.add_header("Authorization", "Basic %s" % base64string)   
+	credentials = ('%s:%s' % (username, password)).encode('utf8')
+	base64string = base64.b64encode(credentials).decode('utf8')
+	request.add_header("Authorization", "Basic %s" % base64string)
 
 	# Load data from NZBGet
 	response = urllib.request.urlopen(request)
-	data = response.read()
+	data = response.read().decode('utf-8')
 
 	# "data" is a JSON raw-string
 	return data
@@ -303,7 +304,7 @@ def sort_inner_files():
 
 	# Move the last rar-file to the top of file list
 	if (file_id):
-		print(('[INFO] Moving last rar-file to the top: %s' % file_name))
+		print('[INFO] Moving last rar-file to the top: %s' % file_name)
 		# Create remote server object
 		nzbget = connect_to_nzbget()
 		# Using RPC-method "editqueue" of XML-RPC-object "nzbget".
@@ -338,10 +339,10 @@ def clean_up():
 	for temp_id in old_temp_files:
 		temp_file = temp_folder + '/' + str(temp_id)
 		try:
-			print(('[DETAIL] Removing temp file ' + temp_file))
+			print('[DETAIL] Removing temp file ' + temp_file)
 			os.remove(temp_file)
 		except:
-			print(('[ERROR] Could not remove temp file ' + temp_file))
+			print('[ERROR] Could not remove temp file ' + temp_file)
 
 # Script body
 def main():
@@ -378,14 +379,14 @@ def main():
 	if os.environ.get('NZBNA_EVENT') == 'NZB_ADDED' or \
 			(os.environ.get('NZBNA_EVENT') == 'FILE_DOWNLOADED' and \
 			os.environ.get('NZBPR_FAKEDETECTOR_SORTED') != 'yes'):
-		print(('[INFO] Sorting inner files for earlier fake detection for %s' % NzbName))
+		print('[INFO] Sorting inner files for earlier fake detection for %s' % NzbName)
 		sys.stdout.flush()
 		sort_inner_files()
 		print('[NZB] NZBPR_FAKEDETECTOR_SORTED=yes')
 		if os.environ.get('NZBNA_EVENT') == 'NZB_ADDED':
 			sys.exit(POSTPROCESS_NONE)
 		
-	print(('[DETAIL] Detecting fake for %s' % NzbName))
+	print('[DETAIL] Detecting fake for %s' % NzbName)
 	sys.stdout.flush()
 	
 	if detect_fake(NzbName, Directory):
@@ -411,7 +412,7 @@ def main():
 		if os.environ.get('NZBPR_PPSTATUS_FAKE') == 'yes':
 			print('[NZB] NZBPR_PPSTATUS_FAKE=')
 
-	print(('[DETAIL] Detecting completed for %s' % NzbName))
+	print('[DETAIL] Detecting completed for %s' % NzbName)
 	sys.stdout.flush()
 
 	# Remove temp files in PP
@@ -419,7 +420,7 @@ def main():
 		clean_up()
 	
 # Execute main script function
-main()	
+main()
 
 # All OK, returning exit status 'POSTPROCESS_SUCCESS' (int <93>) to let NZBGet know
 # that our script has successfully completed (only for pp-script mode).
