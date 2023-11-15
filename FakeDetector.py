@@ -73,6 +73,7 @@ POSTPROCESS_NONE=95
 POSTPROCESS_ERROR=94
 
 mediaExtensions = ['.mkv', '.avi', '.divx', '.xvid', '.mov', '.wmv', '.mp4', '.mpg', '.mpeg', '.vob', '.iso', '.m4v']
+bannedMediaExtensions = os.environ.get('NZBPO_BANNEDEXTENSIONS').replace(' ', '').split(',')
 
 verbose = False
 
@@ -94,7 +95,11 @@ def start_check():
 		if os.environ.get('NZBPR_PPSTATUS_FAKE') == 'yes':
 			# Print the message again during post-processing to add it into the post-processing log
 			# (which is then can be used by notification scripts such as EMail.py)
-			print('[WARNING] Download has media files and executables')
+			# Pp-parameter "NZBPR_PPSTATUS_FAKEBAN" contains more details (saved previously by our script)
+			if os.environ.get('NZBPR_PPSTATUS_FAKEBAN') == None:
+				print('[WARNING] Download has media files and executables')
+			else:
+				print('[WARNING] Download contains banned extension ' + os.environ.get('NZBPR_PPSTATUS_FAKEBAN'))
 		clean_up()
 		sys.exit(POSTPROCESS_SUCCESS)
 
@@ -118,12 +123,30 @@ def contains_media(list):
 			continue
 	return False
 
+# Check if banned media files present in the list of files
+def contains_banned_media(list):
+	for item in list:
+		if os.path.splitext(item)[1] in bannedMediaExtensions:
+			print('[INFO] Found file with banned extension: ' + item)
+			return os.path.splitext(item)[1]
+		else:
+			continue
+	return ''
+
 # Check if executable files present in the list of files
 # Exception: rename.bat (.sh, .exe) are ignored, sometimes valid posts include them.
 def contains_executable(list):
 	exExtensions = [ '.exe', '.bat', '.sh' ]
 	allowNames = [ 'rename', 'Rename' ]
+	excludePath = [ r'reverse', r'spiegelen' ]
 	for item in list:
+		ep = False
+		for ap in excludePath:
+			if re.search(ap, item, re.I):
+				ep = True
+				break
+		if ep:
+			continue
 		name, ext = os.path.splitext(item)
 		if os.path.split(name)[1] != "":
 			name = os.path.split(name)[1]
@@ -156,7 +179,7 @@ def get_latest_file(dir):
 def save_tested(data):
 	with open(tmp_file_name, "a") as tmp_file:
 		tmp_file.write(data)
-		
+
 # Extract path to unrar from NZBGet's global option "UnrarCmd";
 # Since v15 "UnrarCmd" may contain extra parameters passed to unrar;
 # We have to strip these parameters because we need only the path to unrar.
@@ -200,20 +223,20 @@ def list_all_rars(dir):
 		tested += file + '\n'
 	save_tested(tested)
 	return out.splitlines()
-	
+
 # Detect fake nzbs. Returns True if a fake is detected.
 def detect_fake(name, dir):
 	# Fake detection:
 	# If download contains media files AND executables we consider it a fake.
 	# QUEUE mode (called during download and before unpack):
 	#  - if directory contains archives list their content and use the file
-	#	names for detection;
+	#    names for detection;
 	# POST-PROCESSING mode (called after unpack):
 	#  - scan directroy content and use file names for detection;
 	#  - TODO: check video files using ffprobe.
 	#
 	# It's actually not necessary to check the mode (QUEUE or POST-PROCESSING), we always do all checks.
-	
+
 	filelist = []
 	dir = os.path.normpath(dir)
 	filelist.extend([ o for o in os.listdir(dir) if os.path.isfile(os.path.join(dir, o)) ])
@@ -221,10 +244,19 @@ def detect_fake(name, dir):
 	filelist.extend(list_all_rars(dir))
 	for subdir in dirlist:
 		filelist.extend(list_all_rars(subdir))
-	fake = contains_media(filelist) and contains_executable(filelist)
-	if fake:
+	if contains_media(filelist) and contains_executable(filelist):
 		print('[WARNING] Download has media files and executables')
-	return fake
+		# Remove info about banned extension from pp-parameter "NZBPR_PPSTATUS_FAKEBAN"
+		# (in a case it was saved previously)
+		print('[NZB] NZBPR_PPSTATUS_FAKEBAN=')
+		return True
+	banned_ext = contains_banned_media(filelist)
+	if banned_ext != '':
+		print('[WARNING] Download contains banned extension ' + banned_ext)
+		# Save details about banned extension in pp-parameter "NZBPR_PPSTATUS_FAKEBAN"
+		print('[NZB] NZBPR_PPSTATUS_FAKEBAN=' + banned_ext)
+		return True
+	return False
 
 # Establish connection to NZBGet via RPC-API
 def connect_to_nzbget():
@@ -235,11 +267,11 @@ def connect_to_nzbget():
 	port = os.environ['NZBOP_CONTROLPORT']
 	username = os.environ['NZBOP_CONTROLUSERNAME']
 	password = os.environ['NZBOP_CONTROLPASSWORD']
-	
+
 	# Build an URL for XML-RPC requests
 	# TODO: encode username and password in URL-format
 	xmlRpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (username, password, host, port);
-	
+
 	# Create remote server object
 	nzbget = ServerProxy(xmlRpcUrl)
 	return nzbget
@@ -254,7 +286,7 @@ def call_nzbget_direct(url_command):
 	port = os.environ['NZBOP_CONTROLPORT']
 	username = os.environ['NZBOP_CONTROLUSERNAME']
 	password = os.environ['NZBOP_CONTROLPASSWORD']
-	
+
 	# Building http-URL to call the method
 	httpUrl = 'http://%s:%s/jsonrpc/%s' % (host, port, url_command)
 	request = urllib.request.Request(httpUrl)
@@ -277,7 +309,7 @@ def sort_inner_files():
 	# Building command-URL to call method "listfiles" passing three parameters: (0, 0, nzb_id)
 	url_command = 'listfiles?1=0&2=0&3=%i' % nzb_id
 	data = call_nzbget_direct(url_command)
-	
+
 	# The "data" is a raw json-string. We could use json.loads(data) to
 	# parse it but json-module is slow. We parse it on our own.
 
@@ -288,7 +320,7 @@ def sort_inner_files():
 	file_num = None
 	file_id = None
 	file_name = None
-	
+
 	for line in data.splitlines():
 		if line.startswith('"ID" : '):
 			cur_id = int(line[7:len(line)-1])
@@ -351,28 +383,28 @@ def main():
 
 	# Do start up check
 	start_check()
-	
+
 	# That's how we determine if the download is still runnning or is completely downloaded.
 	# We don't use this info in the fake detector (yet).
 	Downloading = os.environ.get('NZBNA_EVENT') == 'FILE_DOWNLOADED'
-	
+
 	# Depending on the mode in which the script was called (queue-script
 	# or post-processing-script) a different set of parameters (env. vars)
 	# is passed. They also have different prefixes:
 	#   - NZBNA_ in queue-script mode;
 	#   - NZBPP_ in pp-script mode.
 	Prefix = 'NZBNA_' if 'NZBNA_EVENT' in os.environ else 'NZBPP_'
-	
+
 	# Read context (what nzb is currently being processed)
 	Category = os.environ[Prefix + 'CATEGORY']
 	Directory = os.environ[Prefix + 'DIRECTORY']
 	NzbName = os.environ[Prefix + 'NZBNAME']
-	
+
 	# Directory for storing list of tested files
 	tmp_file_name = os.environ.get('NZBOP_TEMPDIR') + '/FakeDetector/' + os.environ.get(Prefix + 'NZBID')
-	
+
 	# When nzb is added to queue - reorder inner files for earlier fake detection.
-	# Also it is possible that nzb was added with a category which doesn't have 
+	# Also it is possible that nzb was added with a category which doesn't have
 	# FakeDetector listed in the PostScript. In this case FakeDetector was not called
 	# when adding nzb to queue but it is being called now and we can reorder
 	# files now.
@@ -385,10 +417,10 @@ def main():
 		print('[NZB] NZBPR_FAKEDETECTOR_SORTED=yes')
 		if os.environ.get('NZBNA_EVENT') == 'NZB_ADDED':
 			sys.exit(POSTPROCESS_NONE)
-		
+
 	print('[DETAIL] Detecting fake for %s' % NzbName)
 	sys.stdout.flush()
-	
+
 	if detect_fake(NzbName, Directory):
 		# A fake is detected
 		#
@@ -397,7 +429,7 @@ def main():
 		# if os.environ.get('NZBPR_PPSTATUS_FAKE') == 'yes':
 		#	 print('Marked as fake by another script')
 		print('[NZB] NZBPR_PPSTATUS_FAKE=yes')
-	
+
 		# Special command telling NZBGet to mark nzb as bad. The nzb will
 		# be removed from queue and become status "FAILURE/BAD".
 		print('[NZB] MARK=BAD')
@@ -418,7 +450,7 @@ def main():
 	# Remove temp files in PP
 	if Prefix == 'NZBPP_':
 		clean_up()
-	
+
 # Execute main script function
 main()
 
