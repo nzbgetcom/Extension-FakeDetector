@@ -27,6 +27,11 @@ import shutil
 import subprocess
 import json
 import getopt
+import http.server
+import xmlrpc.server
+import unittest
+import threading
+import json
 
 POSTPROCESS_SUCCESS=93
 POSTPROCESS_NONE=95
@@ -34,7 +39,46 @@ POSTPROCESS_ERROR=94
 
 root_dir = dirname(__file__)
 test_dir = root_dir + '/__'
+host = '127.0.0.1'
+username = 'TestUser'
+password = 'TestPassword'
+port = '6789'
+
 os.makedirs(test_dir + '/FakeDetector')
+
+class RequestEmpty(http.server.BaseHTTPRequestHandler):
+	def do_GET(self):
+		self.send_response(200)
+		self.send_header("Content-Type", "application/json")
+		self.end_headers()
+		self.wfile.write(b'{}')
+
+class RequestWithFileId(http.server.BaseHTTPRequestHandler):
+	def do_GET(self):
+		self.send_response(200)
+		f = open('test_data.json')
+		data = json.load(f)
+		self.send_header("Content-Type", "application/json")
+		self.end_headers()
+		formatted = json.dumps(data, separators=(',\n', ' : '), indent=0)
+		self.wfile.write(formatted.encode('utf-8'))
+		f.close()
+
+	def do_POST(self):
+		self.log_request()
+		self.send_response(200)
+		self.send_header("Content-Type", "text/xml")
+		self.end_headers()
+		self.wfile.write(b'<?xml version="1.0" encoding="UTF-8"?><nzb></nzb>')
+
+class XMLRequestWithFileId(xmlrpc.server.SimpleXMLRPCRequestHandler):
+	def do_POST(self):
+		self.log_request()
+		self.send_response(200)
+		self.send_header("Content-Type", "text/xml")
+		self.end_headers()
+		self.wfile.write(b'<?xml version="1.0" encoding="UTF-8"?><nzb></nzb>')
+
 
 def TEST(statement: str, test_func):
 	print('\n********************************************************')
@@ -62,6 +106,7 @@ def run_script():
 	sys.stdout.flush()
 	proc = subprocess.Popen([get_python(), root_dir + '/FakeDetector.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
 	out, err = proc.communicate()
+	proc.pid
 	ret_code = proc.returncode
 	return (out.decode(), int(ret_code), err.decode())
 
@@ -70,10 +115,13 @@ def set_defaults_env():
 	os.environ['NZBOP_SCRIPTDIR'] = 'test'
 	os.environ['NZBOP_ARTICLECACHE'] = '64'
 	os.environ['NZBOP_TEMPDIR'] = test_dir
+	os.environ['NZBOP_CONTROLPORT'] = port
+	os.environ['NZBOP_CONTROLIP'] = host
+	os.environ['NZBOP_CONTROLUSERNAME'] = username
+	os.environ['NZBOP_CONTROLPASSWORD'] = password
 
 	# script options
 	os.environ['NZBPO_BANNEDEXTENSIONS'] = '.mkv,.mp4'
-
 
 	os.environ['NZBPP_DIRECTORY'] = test_dir
 	os.environ['NZBPP_NZBNAME'] = 'test'
@@ -87,7 +135,8 @@ def set_defaults_env():
 	os.environ['NZBPR__DNZB_EPISODENAME'] = ''
 
 	os.environ['NZBNA_EVENT'] = 'NZB_ADDED'
-	
+	os.environ.pop('NZBPR_PPSTATUS_FAKEBAN', None)
+	os.environ.pop('NZBPP_STATUS', None)
 
 def TEST_COMPATIBALE_NZBGET_VERSION():
 	os.environ['NZBNA_EVENT'] = ''
@@ -121,11 +170,62 @@ def TEST_DO_NOTHING():
 	assert('[WARNING] Download contains banned extension ' + os.environ.get('NZBPR_PPSTATUS_FAKEBAN') in out)
 	assert(code == POSTPROCESS_SUCCESS)
 
-def RUN_TESTS():
-	TEST('Should not be executed if nzbget version is incompatible', TEST_COMPATIBALE_NZBGET_VERSION)
-	TEST('Should ignore incompatibale event', TEST_IGNORE_INCOMPATIBALE_EVENT)
-	TEST('Should do nothing if nzb was marked as bad', TEST_DO_NOTHING)
+def TEST_SKIP_SORTING_RAR_FILES():
+	set_defaults_env()
+	os.environ['NZBNA_NZBNAME'] = 'nzb_test_file'
+	os.environ['NZBNA_CATEGORY'] = 'movies'
+	os.environ['NZBNA_NZBID'] = '8'
+	os.environ['NZBNA_DIRECTORY'] = test_dir
+	os.environ['NZBNA_EVENT'] = 'NZB_ADDED'
+	os.environ['NZBPR_FAKEDETECTOR_SORTED'] = 'no'
 
+	server = http.server.HTTPServer((host, int(port)), RequestEmpty)
+	thread = threading.Thread(target=server.serve_forever)
+	thread.start()
+	[out, code, err] = run_script()
+	server.shutdown()
+	thread.join()
+	assert('[INFO] Skipping sorting since could not find any rar-files' in out)
+	assert('NZB] NZBPR_FAKEDETECTOR_SORTED=yes' in out)
+	assert(code == POSTPROCESS_NONE)
+
+def TEST_DETECT_FAKE_FILES():
+	set_defaults_env()
+	file_name = 'nzb_test_file'
+	os.environ['NZBNA_NZBNAME'] = file_name
+	os.environ['NZBNA_CATEGORY'] = 'movies'
+	os.environ['NZBNA_NZBID'] = '8'
+	os.environ['NZBNA_DIRECTORY'] = test_dir
+	os.environ['NZBNA_EVENT'] = 'FILE_DOWNLOADED'
+	os.environ['NZBPR_FAKEDETECTOR_SORTED'] = 'no'
+
+	server = http.server.HTTPServer((host, int(port)), RequestWithFileId)
+	thread = threading.Thread(target=server.serve_forever)
+	xmlserver = xmlrpc.server.SimpleXMLRPCServer((host, int(port)), XMLRequestWithFileId)
+	thread = threading.Thread(target=server.serve_forever)
+	xmlthread = threading.Thread(target=xmlserver.serve_forever)
+	thread.start()
+	xmlthread.start()
+	[out, code, err] = run_script()
+	server.shutdown()
+	xmlserver.shutdown()
+	thread.join()
+	xmlthread.join()
+	#server.shutdown()
+	#http://127.0.0.1:6789/jsonrpc/listfiles?1=0&2=0&3=8
+	#'Authorization':
+	#'Basic VGVzdFVzZXI6VGVzdFBhc3N3b3Jk'
+	assert('[INFO] Moving last rar-file to the top: %s' % file_name in out)
+	assert('NZB] NZBPR_FAKEDETECTOR_SORTED=yes' in out)
+	assert(code == POSTPROCESS_NONE)
+
+
+def RUN_TESTS():
+	# TEST('Should not be executed if nzbget version is incompatible', TEST_COMPATIBALE_NZBGET_VERSION)
+	# TEST('Should ignore incompatibale event', TEST_IGNORE_INCOMPATIBALE_EVENT)
+	# TEST('Should do nothing if nzb was marked as bad or containes banned extension', TEST_DO_NOTHING)
+	# TEST('Should skip sorting part0x.rar files if File ID not found on NZB_ADDED NZBNA_EVENT', TEST_SKIP_SORTING_RAR_FILES)
+	TEST('Should sort inner files and detect fake files on FILE_DOWNLOADED NZBNA_EVENT',TEST_DETECT_FAKE_FILES)
 	clean_up()
 
 RUN_TESTS()

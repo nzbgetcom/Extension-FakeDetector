@@ -270,7 +270,7 @@ def connect_to_nzbget():
 
 	# Build an URL for XML-RPC requests
 	# TODO: encode username and password in URL-format
-	xmlRpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (username, password, host, port);
+	xmlRpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (username, password, host, port)
 
 	# Create remote server object
 	nzbget = ServerProxy(xmlRpcUrl)
