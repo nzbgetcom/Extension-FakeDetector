@@ -34,18 +34,19 @@ POSTPROCESS_ERROR=94
 
 root_dir = dirname(__file__)
 test_dir = root_dir + '/__'
+os.makedirs(test_dir + '/FakeDetector')
 
 def TEST(statement: str, test_func):
 	print('\n********************************************************')
 	print('TEST:', statement)
-	print('--------------------------------------------------------\n')
+	print('--------------------------------------------------------')
 
 	try:
 		test_func()
-		print('SUCCESS')
+		print(test_func.__name__, '...SUCCESS')
 	except Exception as e:
-		print(e)
-		print(test_func.__name__, 'FAILED')
+		print(test_func.__name__, '...FAILED')
+		traceback.print_exception(e)
 	finally:
 		print('********************************************************\n')
 
@@ -54,9 +55,12 @@ def get_python():
 		return 'python'
 	return 'python3'
 
+def clean_up():
+	os.removedirs(test_dir + '/FakeDetector')
+
 def run_script():
 	sys.stdout.flush()
-	proc = subprocess.Popen([get_python(), root_dir + './FakeDetector.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
+	proc = subprocess.Popen([get_python(), root_dir + '/FakeDetector.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
 	out, err = proc.communicate()
 	ret_code = proc.returncode
 	return (out.decode(), int(ret_code), err.decode())
@@ -64,24 +68,26 @@ def run_script():
 def set_defaults_env():
 	# NZBGet global options
 	os.environ['NZBOP_SCRIPTDIR'] = 'test'
+	os.environ['NZBOP_ARTICLECACHE'] = '64'
+	os.environ['NZBOP_TEMPDIR'] = test_dir
 
 	# script options
 	os.environ['NZBPO_BANNEDEXTENSIONS'] = '.mkv,.mp4'
 
-	# properties of nzb-file
+
 	os.environ['NZBPP_DIRECTORY'] = test_dir
 	os.environ['NZBPP_NZBNAME'] = 'test'
 	os.environ['NZBPP_PARSTATUS'] = '2'
 	os.environ['NZBPP_UNPACKSTATUS'] = '2'
 	os.environ['NZBPP_CATEGORY'] = ''
+	os.environ['NZBPP_NZBID'] = '8'
 
-	# pp-parameters of nzb-file, including DNZB-headers
 	os.environ['NZBPR__DNZB_USENZBNAME'] = 'no'
 	os.environ['NZBPR__DNZB_PROPERNAME'] = ''
 	os.environ['NZBPR__DNZB_EPISODENAME'] = ''
 
 	os.environ['NZBNA_EVENT'] = 'NZB_ADDED'
-	os.environ['NZBOP_ARTICLECACHE'] = '64'
+	
 
 def TEST_COMPATIBALE_NZBGET_VERSION():
 	os.environ['NZBNA_EVENT'] = ''
@@ -98,10 +104,28 @@ def TEST_IGNORE_INCOMPATIBALE_EVENT():
 	res = run_script()
 	assert(res[1] == 0)
 
+def TEST_DO_NOTHING():
+	set_defaults_env()
+	os.environ['NZBPP_STATUS'] = 'FAILURE/BAD'
+	os.environ['NZBPR_PPSTATUS_FAKE'] = 'yes'
+	[out, code, err] = run_script()
+	assert(code == POSTPROCESS_SUCCESS)
+
+	os.environ.pop('NZBPR_PPSTATUS_FAKEBAN', None)
+	[out, code, err] = run_script()
+	assert('[WARNING] Download has media files and executables' in out)
+	assert(code == POSTPROCESS_SUCCESS)
+
+	os.environ['NZBPR_PPSTATUS_FAKEBAN'] = '.mp4'
+	[out, code, err] = run_script()
+	assert('[WARNING] Download contains banned extension ' + os.environ.get('NZBPR_PPSTATUS_FAKEBAN') in out)
+	assert(code == POSTPROCESS_SUCCESS)
 
 def RUN_TESTS():
 	TEST('Should not be executed if nzbget version is incompatible', TEST_COMPATIBALE_NZBGET_VERSION)
 	TEST('Should ignore incompatibale event', TEST_IGNORE_INCOMPATIBALE_EVENT)
+	TEST('Should do nothing if nzb was marked as bad', TEST_DO_NOTHING)
 
+	clean_up()
 
 RUN_TESTS()
