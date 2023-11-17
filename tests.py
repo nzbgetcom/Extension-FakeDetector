@@ -89,7 +89,7 @@ def TEST(statement: str, test_func):
 		print(test_func.__name__, '...SUCCESS')
 	except Exception as e:
 		print(test_func.__name__, '...FAILED')
-		traceback.print_exception(e)
+		traceback.print_exc()
 	finally:
 		print('********************************************************\n')
 
