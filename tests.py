@@ -69,16 +69,9 @@ class RequestWithFileId(http.server.BaseHTTPRequestHandler):
 		self.send_response(200)
 		self.send_header("Content-Type", "text/xml")
 		self.end_headers()
-		self.wfile.write(b'<?xml version="1.0" encoding="UTF-8"?><nzb></nzb>')
-
-class XMLRequestWithFileId(xmlrpc.server.SimpleXMLRPCRequestHandler):
-	def do_POST(self):
-		self.log_request()
-		self.send_response(200)
-		self.send_header("Content-Type", "text/xml")
-		self.end_headers()
-		self.wfile.write(b'<?xml version="1.0" encoding="UTF-8"?><nzb></nzb>')
-
+		data = '<?xml version="1.0" encoding="UTF-8"?><nzb></nzb>'
+		response = xmlrpc.client.dumps((data,), allow_none=False, encoding=None)
+		self.wfile.write(response.encode('utf-8'))
 
 def TEST(statement: str, test_func):
 	print('\n********************************************************')
@@ -100,7 +93,14 @@ def get_python():
 	return 'python3'
 
 def clean_up():
-	os.removedirs(test_dir + '/FakeDetector')
+	for root, dirs, files in os.walk(test_dir, topdown=False):
+		for name in files:
+			file_path = os.path.join(root, name)
+			os.remove(file_path)
+		for name in dirs:
+			dir_path = os.path.join(root, name)
+			os.rmdir(dir_path)
+	os.rmdir(test_dir)
 
 def run_script():
 	sys.stdout.flush()
@@ -189,6 +189,26 @@ def TEST_SKIP_SORTING_RAR_FILES():
 	assert('NZB] NZBPR_FAKEDETECTOR_SORTED=yes' in out)
 	assert(code == POSTPROCESS_NONE)
 
+def TEST_SORT_FILES():
+	set_defaults_env()
+	file_name = 'nzb_test_file'
+	os.environ['NZBNA_NZBNAME'] = file_name
+	os.environ['NZBNA_CATEGORY'] = 'movies'
+	os.environ['NZBNA_NZBID'] = '8'
+	os.environ['NZBNA_DIRECTORY'] = test_dir
+	os.environ['NZBNA_EVENT'] = 'FILE_DOWNLOADED'
+	os.environ['NZBPR_FAKEDETECTOR_SORTED'] = 'no'
+
+	server = http.server.HTTPServer((host, int(port)), RequestWithFileId)
+	thread = threading.Thread(target=server.serve_forever)
+	thread.start()
+	[out, code, err] = run_script()
+	server.shutdown()
+	thread.join()
+	assert('[DETAIL] Detecting completed for %s' % file_name in out)
+	assert('NZB] NZBPR_FAKEDETECTOR_SORTED=yes' in out)
+	assert(code == POSTPROCESS_SUCCESS)
+
 def TEST_DETECT_FAKE_FILES():
 	set_defaults_env()
 	file_name = 'nzb_test_file'
@@ -201,31 +221,21 @@ def TEST_DETECT_FAKE_FILES():
 
 	server = http.server.HTTPServer((host, int(port)), RequestWithFileId)
 	thread = threading.Thread(target=server.serve_forever)
-	xmlserver = xmlrpc.server.SimpleXMLRPCServer((host, int(port)), XMLRequestWithFileId)
-	thread = threading.Thread(target=server.serve_forever)
-	xmlthread = threading.Thread(target=xmlserver.serve_forever)
 	thread.start()
-	xmlthread.start()
 	[out, code, err] = run_script()
 	server.shutdown()
-	xmlserver.shutdown()
 	thread.join()
-	xmlthread.join()
-	#server.shutdown()
-	#http://127.0.0.1:6789/jsonrpc/listfiles?1=0&2=0&3=8
-	#'Authorization':
-	#'Basic VGVzdFVzZXI6VGVzdFBhc3N3b3Jk'
-	assert('[INFO] Moving last rar-file to the top: %s' % file_name in out)
+	assert('[DETAIL] Detecting completed for %s' % file_name in out)
 	assert('NZB] NZBPR_FAKEDETECTOR_SORTED=yes' in out)
-	assert(code == POSTPROCESS_NONE)
-
+	assert(code == POSTPROCESS_SUCCESS)
 
 def RUN_TESTS():
-	# TEST('Should not be executed if nzbget version is incompatible', TEST_COMPATIBALE_NZBGET_VERSION)
-	# TEST('Should ignore incompatibale event', TEST_IGNORE_INCOMPATIBALE_EVENT)
-	# TEST('Should do nothing if nzb was marked as bad or containes banned extension', TEST_DO_NOTHING)
-	# TEST('Should skip sorting part0x.rar files if File ID not found on NZB_ADDED NZBNA_EVENT', TEST_SKIP_SORTING_RAR_FILES)
-	TEST('Should sort inner files and detect fake files on FILE_DOWNLOADED NZBNA_EVENT',TEST_DETECT_FAKE_FILES)
+	TEST('Should not be executed if nzbget version is incompatible', TEST_COMPATIBALE_NZBGET_VERSION)
+	TEST('Should ignore incompatibale event', TEST_IGNORE_INCOMPATIBALE_EVENT)
+	TEST('Should do nothing if nzb was marked as bad or containes banned extension', TEST_DO_NOTHING)
+	TEST('Should skip sorting part0x.rar files if File ID not found on NZB_ADDED NZBNA_EVENT', TEST_SKIP_SORTING_RAR_FILES)
+	TEST('Should sort part0x.rar files on FILE_DOWNLOADED NZBNA_EVENT',TEST_SORT_FILES)
+	TEST('Should detect fake files',TEST_DETECT_FAKE_FILES)
 	clean_up()
 
 RUN_TESTS()
