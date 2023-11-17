@@ -24,7 +24,7 @@ jobs:
         # test script name
         TEST_SCRIPT=tests.py
         # debug
-        DEBUG=true
+        DEBUG=false
 
         TEST_RESULTS=/tmp/test-results.txt
         TOTAL_FAILED=0
