@@ -3,7 +3,7 @@
 
 > **Note:** This script is compatible with python 3.9.x and above. 
 
-> **Note:** If you need support for Python 2.x or older Python3.x versions please use [v1.7](https://github.com/nzbget/FakeDetector/releases/tag/v1.7) release.
+> **Note:** If you need support for Python 2.x or older Python3.x versions please use [v1.7](https://github.com/nzbgetcom/Extension-FakeDetector/releases/tag/v1.7) release.
 
 > **Note:** [Here](https://github.com/nzbgetcom/nzbget/discussions/56) you can discuss problems with different versions of Python.
 
