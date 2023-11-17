@@ -22,14 +22,10 @@ import sys
 from os.path import dirname
 import os
 import traceback
-import re
-import shutil
 import subprocess
 import json
-import getopt
 import http.server
 import xmlrpc.server
-import unittest
 import threading
 import json
 
@@ -38,13 +34,23 @@ POSTPROCESS_NONE=95
 POSTPROCESS_ERROR=94
 
 root_dir = dirname(__file__)
-test_dir = root_dir + '/__'
+test_data_dir = root_dir + '/test_data'
+tmp_dir = root_dir + '/__'
 host = '127.0.0.1'
 username = 'TestUser'
 password = 'TestPassword'
 port = '6789'
 
-os.makedirs(test_dir + '/FakeDetector')
+os.makedirs(tmp_dir + '/FakeDetector')
+
+def RUN_TESTS():
+	TEST('Should not be executed if nzbget version is incompatible', TEST_COMPATIBALE_NZBGET_VERSION)
+	TEST('Should ignore incompatibale event', TEST_IGNORE_INCOMPATIBALE_EVENT)
+	TEST('Should do nothing if nzb was marked as bad or containes banned extension', TEST_DO_NOTHING)
+	TEST('Should skip sorting part0x.rar files if File ID not found on NZB_ADDED NZBNA_EVENT', TEST_SKIP_SORTING_RAR_FILES)
+	TEST('Should sort part0x.rar files on FILE_DOWNLOADED NZBNA_EVENT',TEST_SORT_FILES)
+	TEST('Should detect fake (media, executable) or banned files',TEST_DETECT_FAKE_FILES)
+	clean_up()
 
 class RequestEmpty(http.server.BaseHTTPRequestHandler):
 	def do_GET(self):
@@ -56,7 +62,7 @@ class RequestEmpty(http.server.BaseHTTPRequestHandler):
 class RequestWithFileId(http.server.BaseHTTPRequestHandler):
 	def do_GET(self):
 		self.send_response(200)
-		f = open('test_data.json')
+		f = open(test_data_dir + '/nzbget_response.json')
 		data = json.load(f)
 		self.send_header("Content-Type", "application/json")
 		self.end_headers()
@@ -93,14 +99,14 @@ def get_python():
 	return 'python3'
 
 def clean_up():
-	for root, dirs, files in os.walk(test_dir, topdown=False):
+	for root, dirs, files in os.walk(tmp_dir, topdown=False):
 		for name in files:
 			file_path = os.path.join(root, name)
 			os.remove(file_path)
 		for name in dirs:
 			dir_path = os.path.join(root, name)
 			os.rmdir(dir_path)
-	os.rmdir(test_dir)
+	os.rmdir(tmp_dir)
 
 def run_script():
 	sys.stdout.flush()
@@ -114,7 +120,7 @@ def set_defaults_env():
 	# NZBGet global options
 	os.environ['NZBOP_SCRIPTDIR'] = 'test'
 	os.environ['NZBOP_ARTICLECACHE'] = '64'
-	os.environ['NZBOP_TEMPDIR'] = test_dir
+	os.environ['NZBOP_TEMPDIR'] = tmp_dir
 	os.environ['NZBOP_CONTROLPORT'] = port
 	os.environ['NZBOP_CONTROLIP'] = host
 	os.environ['NZBOP_CONTROLUSERNAME'] = username
@@ -123,7 +129,7 @@ def set_defaults_env():
 	# script options
 	os.environ['NZBPO_BANNEDEXTENSIONS'] = '.mkv,.mp4'
 
-	os.environ['NZBPP_DIRECTORY'] = test_dir
+	os.environ['NZBPP_DIRECTORY'] = tmp_dir
 	os.environ['NZBPP_NZBNAME'] = 'test'
 	os.environ['NZBPP_PARSTATUS'] = '2'
 	os.environ['NZBPP_UNPACKSTATUS'] = '2'
@@ -175,7 +181,7 @@ def TEST_SKIP_SORTING_RAR_FILES():
 	os.environ['NZBNA_NZBNAME'] = 'nzb_test_file'
 	os.environ['NZBNA_CATEGORY'] = 'movies'
 	os.environ['NZBNA_NZBID'] = '8'
-	os.environ['NZBNA_DIRECTORY'] = test_dir
+	os.environ['NZBNA_DIRECTORY'] = test_data_dir
 	os.environ['NZBNA_EVENT'] = 'NZB_ADDED'
 	os.environ['NZBPR_FAKEDETECTOR_SORTED'] = 'no'
 
@@ -195,7 +201,7 @@ def TEST_SORT_FILES():
 	os.environ['NZBNA_NZBNAME'] = file_name
 	os.environ['NZBNA_CATEGORY'] = 'movies'
 	os.environ['NZBNA_NZBID'] = '8'
-	os.environ['NZBNA_DIRECTORY'] = test_dir
+	os.environ['NZBNA_DIRECTORY'] = test_data_dir
 	os.environ['NZBNA_EVENT'] = 'FILE_DOWNLOADED'
 	os.environ['NZBPR_FAKEDETECTOR_SORTED'] = 'no'
 
@@ -215,7 +221,8 @@ def TEST_DETECT_FAKE_FILES():
 	os.environ['NZBNA_NZBNAME'] = file_name
 	os.environ['NZBNA_CATEGORY'] = 'movies'
 	os.environ['NZBNA_NZBID'] = '8'
-	os.environ['NZBNA_DIRECTORY'] = test_dir
+	os.environ['NZBPR_PPSTATUS_FAKEBAN'] = '.nzb,.json,.mp4'
+	os.environ['NZBNA_DIRECTORY'] = test_data_dir
 	os.environ['NZBNA_EVENT'] = 'FILE_DOWNLOADED'
 	os.environ['NZBPR_FAKEDETECTOR_SORTED'] = 'no'
 
@@ -225,17 +232,10 @@ def TEST_DETECT_FAKE_FILES():
 	[out, code, err] = run_script()
 	server.shutdown()
 	thread.join()
+	assert('[WARNING] Download has media files and executables' in out)
+	assert('[NZB] NZBPR_PPSTATUS_FAKE=yes' in out)
+	assert('[NZB] MARK=BAD' in out)
 	assert('[DETAIL] Detecting completed for %s' % file_name in out)
-	assert('NZB] NZBPR_FAKEDETECTOR_SORTED=yes' in out)
 	assert(code == POSTPROCESS_SUCCESS)
-
-def RUN_TESTS():
-	TEST('Should not be executed if nzbget version is incompatible', TEST_COMPATIBALE_NZBGET_VERSION)
-	TEST('Should ignore incompatibale event', TEST_IGNORE_INCOMPATIBALE_EVENT)
-	TEST('Should do nothing if nzb was marked as bad or containes banned extension', TEST_DO_NOTHING)
-	TEST('Should skip sorting part0x.rar files if File ID not found on NZB_ADDED NZBNA_EVENT', TEST_SKIP_SORTING_RAR_FILES)
-	TEST('Should sort part0x.rar files on FILE_DOWNLOADED NZBNA_EVENT',TEST_SORT_FILES)
-	TEST('Should detect fake files',TEST_DETECT_FAKE_FILES)
-	clean_up()
 
 RUN_TESTS()
