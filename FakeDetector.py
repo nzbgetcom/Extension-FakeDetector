@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Fake detection script for NZBGet
 #
@@ -38,11 +38,8 @@
 #
 # PP-Script version: 1.7.
 #
-# For more info and updates please visit forum topic at
-# http://nzbget.net/forum/viewtopic.php?f=8&t=1394.
 #
-# NOTE: This script requires Python to be installed on your system (tested
-# only with Python 2.x; may not work with Python 3.x).
+# NOTE: This script requires Python 3.9.x to be installed on your system
 
 
 ##############################################################################
@@ -63,9 +60,9 @@ import os
 import sys
 import subprocess
 import re
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import base64
-from xmlrpclib import ServerProxy
+from xmlrpc.client import ServerProxy
 import shlex
 import traceback
 
@@ -215,7 +212,7 @@ def list_all_rars(dir):
 					print('command: %s' % command)
 				proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				out_tmp, err = proc.communicate()
-				out += out_tmp
+				out += out_tmp.decode()
 				result = proc.returncode
 				if verbose:
 					print(out_tmp)
@@ -273,7 +270,7 @@ def connect_to_nzbget():
 
 	# Build an URL for XML-RPC requests
 	# TODO: encode username and password in URL-format
-	xmlRpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (username, password, host, port);
+	xmlRpcUrl = 'http://%s:%s@%s:%s/xmlrpc' % (username, password, host, port)
 
 	# Create remote server object
 	nzbget = ServerProxy(xmlRpcUrl)
@@ -291,15 +288,16 @@ def call_nzbget_direct(url_command):
 	password = os.environ['NZBOP_CONTROLPASSWORD']
 
 	# Building http-URL to call the method
-	httpUrl = 'http://%s:%s/jsonrpc/%s' % (host, port, url_command);
-	request = urllib2.Request(httpUrl)
+	httpUrl = 'http://%s:%s/jsonrpc/%s' % (host, port, url_command)
+	request = urllib.request.Request(httpUrl)
 
-	base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
+	credentials = ('%s:%s' % (username, password)).encode('utf8')
+	base64string = base64.b64encode(credentials).decode('utf8')
 	request.add_header("Authorization", "Basic %s" % base64string)
 
 	# Load data from NZBGet
-	response = urllib2.urlopen(request)
-	data = response.read()
+	response = urllib.request.urlopen(request)
+	data = response.read().decode('utf-8')
 
 	# "data" is a JSON raw-string
 	return data
@@ -317,8 +315,8 @@ def sort_inner_files():
 
 	# Iterate through the list of files to find the last rar-file.
 	# The last is the one with the highest XX in ".partXX.rar" or ".rXX"
-	regex1 = re.compile('.*\.part(\d+)\.rar', re.IGNORECASE)
-	regex2 = re.compile('.*\.r(\d+)', re.IGNORECASE)
+	regex1 = re.compile(r'.*\.part(\d+)\.rar', re.IGNORECASE)
+	regex2 = re.compile(r'.*\.r(\d+)', re.IGNORECASE)
 	file_num = None
 	file_id = None
 	file_name = None
@@ -429,7 +427,7 @@ def main():
 		# Add post-processing parameter "PPSTATUS_FAKE" for nzb-file.
 		# Scripts running after fake detector can check the parameter like this:
 		# if os.environ.get('NZBPR_PPSTATUS_FAKE') == 'yes':
-		#     print('Marked as fake by another script')
+		#	 print('Marked as fake by another script')
 		print('[NZB] NZBPR_PPSTATUS_FAKE=yes')
 
 		# Special command telling NZBGet to mark nzb as bad. The nzb will
