@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Test for VideoSort post-processing script for NZBGet.
+# Test for FakeDetector queue/post-processing script for NZBGet.
 #
 # Copyright (C) 2023 Denis <denis@nzbget.com>
 #
@@ -44,7 +44,6 @@ port = '6789'
 os.makedirs(tmp_dir + '/FakeDetector')
 
 def RUN_TESTS():
-	TEST('Should not be executed if nzbget version is incompatible', TEST_COMPATIBALE_NZBGET_VERSION)
 	TEST('Should ignore incompatibale event', TEST_IGNORE_INCOMPATIBALE_EVENT)
 	TEST('Should do nothing if nzb was marked as bad or containes banned extension', TEST_DO_NOTHING)
 	TEST('Should skip sorting part0x.rar files if File ID not found on NZB_ADDED NZBNA_EVENT', TEST_SKIP_SORTING_RAR_FILES)
@@ -143,15 +142,6 @@ def set_defaults_env():
 	os.environ['NZBNA_EVENT'] = 'NZB_ADDED'
 	os.environ.pop('NZBPR_PPSTATUS_FAKEBAN', None)
 	os.environ.pop('NZBPP_STATUS', None)
-
-def TEST_COMPATIBALE_NZBGET_VERSION():
-	os.environ['NZBNA_EVENT'] = ''
-	os.environ['NZBPP_DIRECTORY'] = ''
-	os.environ['NZBPO_BANNEDEXTENSIONS'] = ''
-	res = run_script()
-	assert('*** NZBGet queue script ***' in res[0])
-	assert('This script is supposed to be called from nzbget (14.0 or later).' in res[0])
-	assert(res[1] == 1)
 
 def TEST_IGNORE_INCOMPATIBALE_EVENT():
 	set_defaults_env()

@@ -2,9 +2,10 @@
 > made by @hugbug.
 
 > **Note:** This script is compatible with python 3.9.x and above. 
-[Here](https://github.com/nzbgetcom/nzbget/discussions/56) you can discuss problems with different versions of Python.
 
-> **Note:** If you need support for older versions of python, you can try your luck with older [releases](https://github.com/nzbget/FakeDetector/releases).
+> **Note:** If you need support for Python 2.x or older Python3.x versions please use [v1.7](https://github.com/nzbgetcom/Extension-FakeDetector/releases/tag/v1.7) release.
+
+> **Note:** [Here](https://github.com/nzbgetcom/nzbget/discussions/56) you can discuss problems with different versions of Python.
 
 # FakeDetector
 Fake detection [script](https://nzbget.com/documentation/extension-scripts/) for [NZBGet](https://nzbget.com).
