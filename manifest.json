@@ -7,7 +7,7 @@
 	"version": "3.0.0",
 	"author": "Andrey Prygunkov",
 	"license": "GNU",
-	"about": "Detect nzbs with fake media files.",
+	"about": "Detects nzbs with fake media files.",
 	"queueEvents": "NZB_ADDED, NZB_DOWNLOADED, FILE_DOWNLOADED",
 	"requirements": [
 		"This script requires Python 3.8.x to be installed on your system"
