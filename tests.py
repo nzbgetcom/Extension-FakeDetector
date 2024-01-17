@@ -109,7 +109,7 @@ def clean_up():
 
 def run_script():
 	sys.stdout.flush()
-	proc = subprocess.Popen([get_python(), root_dir + '/FakeDetector.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
+	proc = subprocess.Popen([get_python(), root_dir + '/main.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
 	out, err = proc.communicate()
 	proc.pid
 	ret_code = proc.returncode

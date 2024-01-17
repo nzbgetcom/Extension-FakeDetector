@@ -1,0 +1,39 @@
+{
+	"main": "main.py",
+	"name": "FakeDetector",
+	"homepage": "https://github.com/nzbgetcom/Extension-FakeDetector",
+	"kind": "QUEUE/POST-PROCESSING",
+	"displayName": "Fake Detector",
+	"version": "3.0.0",
+	"author": "Andrey Prygunkov",
+	"license": "GNU",
+	"about": "Detects nzbs with fake media files.",
+	"queueEvents": "NZB_ADDED, NZB_DOWNLOADED, FILE_DOWNLOADED",
+	"requirements": [
+		"This script requires Python 3.8.x to be installed on your system"
+	],
+	"description": [
+		"If a fake is detected the download is marked as bad. NZBGet removes",
+		"the download from queue and (if option \"DeleteCleanupDisk\" is active) the",
+		"downloaded files are deleted from disk. If duplicate handling is active",
+		"(option \"DupeCheck\") then another duplicate is chosen for download if available.",
+		"",
+		"The status \"FAILURE/BAD\" is passed to other scripts and informs them about failure."
+	],
+	"options": [
+		{
+			"name": "BannedExtensions",
+			"displayName": "BannedExtensions",
+			"value": "",
+			"description": [
+				"BannedExtensions.",
+				"",
+				"Downloads which contain files with any of the following extensions will be marked as fake.",
+				"Extensions must be separated by a comma (eg: .wmv, .divx)."
+			],
+			"select": []
+		}
+	],
+	"commands": [],
+	"taskTime": ""
+}

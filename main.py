@@ -21,40 +21,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-##############################################################################
-### NZBGET QUEUE/POST-PROCESSING SCRIPT                                    ###
-### QUEUE EVENTS: NZB_ADDED, NZB_DOWNLOADED, FILE_DOWNLOADED
-
-# Detect nzbs with fake media files.
-#
-# If a fake is detected the download is marked as bad. NZBGet removes
-# the download from queue and (if option "DeleteCleanupDisk" is active) the
-# downloaded files are deleted from disk. If duplicate handling is active
-# (option "DupeCheck") then another duplicate is chosen for download
-# if available.
-#
-# The status "FAILURE/BAD" is passed to other scripts and informs them
-# about failure.
-#
-# PP-Script version: 1.7.
-#
-#
-# NOTE: This script requires Python 3.9.x to be installed on your system
-
-
-##############################################################################
-### OPTIONS                                                                ###
-
-# Banned extensions.
-#
-# Downloads which contain files with any of the following extensions will be marked as fake.
-# Extensions must be separated by a comma (eg: .wmv, .divx).
-#BannedExtensions=
-
-
-### NZBGET QUEUE/POST-PROCESSING SCRIPT                                    ###
-##############################################################################
-
 
 import os
 import sys
