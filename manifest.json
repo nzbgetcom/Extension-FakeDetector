@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/nzbgetcom/Extension-FakeDetector",
 	"kind": "QUEUE/POST-PROCESSING",
 	"displayName": "Fake Detector",
-	"version": "3.0.0",
+	"version": "3.1",
 	"author": "Andrey Prygunkov",
 	"license": "GNU",
 	"about": "Detects nzbs with fake media files.",
