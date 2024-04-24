@@ -5,6 +5,7 @@
 	"kind": "QUEUE/POST-PROCESSING",
 	"displayName": "Fake Detector",
 	"version": "3.1",
+	"nzbgetMinVersion": "23.0",
 	"author": "Andrey Prygunkov",
 	"license": "GNU",
 	"about": "Detects nzbs with fake media files.",

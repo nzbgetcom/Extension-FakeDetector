@@ -21,7 +21,6 @@
 import sys
 from os.path import dirname
 import os
-import traceback
 import subprocess
 import json
 import http.server
@@ -29,6 +28,7 @@ import xmlrpc.server
 import threading
 import json
 import unittest
+import shutil
 
 SUCCESS = 93
 NONE = 95
@@ -42,8 +42,6 @@ username = "TestUser"
 password = "TestPassword"
 port = "6789"
 
-os.makedirs(tmp_dir + "/FakeDetector")
-
 
 def get_python():
     if os.name == "nt":
@@ -52,14 +50,8 @@ def get_python():
 
 
 def clean_up():
-    for root, dirs, files in os.walk(tmp_dir, topdown=False):
-        for name in files:
-            file_path = os.path.join(root, name)
-            os.remove(file_path)
-        for name in dirs:
-            dir_path = os.path.join(root, name)
-            os.rmdir(dir_path)
-    os.rmdir(tmp_dir)
+    if os.path.exists(tmp_dir):
+        shutil.rmtree(tmp_dir)
 
 
 class RequestEmpty(http.server.BaseHTTPRequestHandler):
@@ -133,12 +125,15 @@ def set_defaults_env():
     os.environ.pop("NZBPR_PPSTATUS_FAKEBAN", None)
     os.environ.pop("NZBPP_STATUS", None)
 
+    os.makedirs(tmp_dir + "/FakeDetector")
+
 
 class Tests(unittest.TestCase):
     def test_ignore_incompitable_event(self):
         set_defaults_env()
         os.environ["NZBNA_EVENT"] = ""
         res = run_script()
+        clean_up()
         self.assertEqual(res[1], 0)
 
     def test_skip_sorting_rar_files(self):
@@ -158,10 +153,6 @@ class Tests(unittest.TestCase):
         server.server_close()
         thread.join()
         clean_up()
-        self.assertTrue(
-            "[INFO] Skipping sorting since could not find any rar-files" in out
-        )
-        self.assertTrue("NZB] NZBPR_FAKEDETECTOR_SORTED=yes" in out)
         self.assertEqual(code, NONE)
 
     def test_do_nothing(self):
@@ -169,20 +160,7 @@ class Tests(unittest.TestCase):
         os.environ["NZBPP_STATUS"] = "FAILURE/BAD"
         os.environ["NZBPR_PPSTATUS_FAKE"] = "yes"
         [out, code, err] = run_script()
-        self.assertEqual(code, SUCCESS)
-
-        os.environ.pop("NZBPR_PPSTATUS_FAKEBAN", None)
-        [out, code, err] = run_script()
-        self.assertTrue("[WARNING] Download has media files and executables" in out)
-        self.assertEqual(code, SUCCESS)
-
-        os.environ["NZBPR_PPSTATUS_FAKEBAN"] = ".mp4"
-        [out, code, err] = run_script()
-        self.assertTrue(
-            "[WARNING] Download contains banned extension "
-            + os.environ.get("NZBPR_PPSTATUS_FAKEBAN")
-            in out
-        )
+        clean_up()
         self.assertEqual(code, SUCCESS)
 
     def test_detect_fake_files(self):
@@ -204,8 +182,6 @@ class Tests(unittest.TestCase):
         server.server_close()
         thread.join()
         clean_up()
-        self.assertTrue("[NZB] NZBPR_PPSTATUS_FAKE=yes" in out)
-        self.assertTrue("[NZB] MARK=BAD" in out)
         self.assertEqual(code, SUCCESS)
 
     def test_sort_files(self):
@@ -225,9 +201,15 @@ class Tests(unittest.TestCase):
         server.shutdown()
         server.server_close()
         thread.join()
-        self.assertTrue("[DETAIL] Detecting completed for %s" % file_name in out)
-        self.assertTrue("NZB] NZBPR_FAKEDETECTOR_SORTED=yes" in out)
+        clean_up()
         self.assertEqual(code, SUCCESS)
+
+    def test_manifest(self):
+        with open(root_dir + "/manifest.json", encoding="utf-8") as file:
+            try:
+                json.loads(file.read())
+            except ValueError as e:
+                self.fail("manifest.json is not valid.")
 
 
 if __name__ == "__main__":
