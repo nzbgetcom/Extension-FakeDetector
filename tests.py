@@ -206,6 +206,17 @@ class Tests(unittest.TestCase):
         clean_up()
         self.assertEqual(code, SUCCESS)
 
+    def test_post_processing_bad_nzb_without_temp_folder(self):
+        # nzb marked bad before any file was downloaded: the temp folder was never created
+        set_defaults_env()
+        shutil.rmtree(tmp_dir + "/FakeDetector")
+        os.environ["NZBPP_STATUS"] = "FAILURE/BAD"
+        os.environ["NZBPR_PPSTATUS_FAKE"] = "yes"
+        [out, code, err] = run_script()
+        clean_up()
+        self.assertEqual(code, SUCCESS)
+        self.assertNotIn("Traceback", err + out)
+
     def test_detect_fake_files(self):
         set_defaults_env()
         file_name = "nzb_test_file"

@@ -401,6 +401,11 @@ def clean_up():
     temp_folder = os.environ.get("NZBOP_TEMPDIR") + "/FakeDetector"
 
     nzbids = []
+    # The temp folder is created when the first file is tested. It doesn't exist if the
+    # nzb was marked bad before any file was downloaded (e.g. by the check on NZB_ADDED
+    # or by another extension), so there is nothing to clean up.
+    if not os.path.isdir(temp_folder):
+        return
     files = os.listdir(temp_folder)
 
     if len(files) > 1:
