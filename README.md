@@ -21,3 +21,11 @@ Authors:
 Detects nzbs with fake media files. If a fake is detected the download is marked as bad. NZBGet removes the download from queue and (if option "DeleteCleanupDisk" is active) the downloaded files are deleted from disk. If duplicate handling is active (option "DupeCheck") then another duplicate is chosen for download if available.
 
 The status "FAILURE/BAD" is passed to other scripts and informs them about failure.
+
+## When detection happens
+
+- **When the nzb is added to the queue**: the file names listed in the nzb are checked, so a download whose listed files include a banned extension (option `BannedExtensions`), or both media files and executables, is marked bad before anything is downloaded.
+- **During download**: rar-archive volumes are listed (without unpacking) as they arrive; the last volume is moved to the top of the queue so this happens early.
+- **After download**: the downloaded and unpacked files are checked.
+
+Obfuscated posts only reveal their real file names after par-repair renaming, so for those the checks during and after download still apply.

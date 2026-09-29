@@ -55,8 +55,25 @@ mediaExtensions = [
     ".iso",
     ".m4v",
 ]
-bannedMediaExtensions = (
-    os.environ.get("NZBPO_BANNEDEXTENSIONS").replace(" ", "").split(",")
+
+
+# Parse option "BannedExtensions" into a list of lower-case extensions with a leading dot.
+# Empty entries are dropped: an empty option must not match files without an extension
+# (os.path.splitext() returns "" for those, which is common for obfuscated posts).
+def parse_banned_extensions(value):
+    extensions = []
+    for ext in (value or "").split(","):
+        ext = ext.strip().lower()
+        if not ext:
+            continue
+        if not ext.startswith("."):
+            ext = "." + ext
+        extensions.append(ext)
+    return extensions
+
+
+bannedMediaExtensions = parse_banned_extensions(
+    os.environ.get("NZBPO_BANNEDEXTENSIONS")
 )
 
 verbose = False
@@ -126,7 +143,7 @@ def contains_media(list):
 # Check if banned media files present in the list of files
 def contains_banned_media(list):
     for item in list:
-        if os.path.splitext(item)[1] in bannedMediaExtensions:
+        if os.path.splitext(item)[1].lower() in bannedMediaExtensions:
             print("[INFO] Found file with banned extension: " + item)
             return os.path.splitext(item)[1]
         else:
@@ -258,6 +275,13 @@ def detect_fake(name, dir):
     filelist.extend(list_all_rars(dir))
     for subdir in dirlist:
         filelist.extend(list_all_rars(subdir))
+    return check_file_list(filelist)
+
+
+# Apply the fake detection rules to a list of file names.
+# Used both for files found on disk / inside archives and for the file names
+# listed in the nzb when it is added to the queue (before anything is downloaded).
+def check_file_list(filelist):
     if contains_media(filelist) and contains_executable(filelist):
         print("[WARNING] Download has media files and executables")
         # Remove info about banned extension from pp-parameter "NZBPR_PPSTATUS_FAKEBAN"
@@ -321,7 +345,8 @@ def call_nzbget_direct(url_command):
     return data
 
 
-# Reorder inner files for earlier fake detection
+# Reorder inner files for earlier fake detection.
+# Returns the names of all files listed in the nzb.
 def sort_inner_files():
     nzb_id = int(os.environ.get("NZBNA_NZBID"))
 
@@ -339,12 +364,14 @@ def sort_inner_files():
     file_num = None
     file_id = None
     file_name = None
+    file_names = []
 
     for line in data.splitlines():
         if line.startswith('"ID" : '):
             cur_id = int(line[7 : len(line) - 1])
         if line.startswith('"Filename" : "'):
             cur_name = line[14 : len(line) - 2]
+            file_names.append(cur_name)
             match = regex1.match(cur_name) or regex2.match(cur_name)
             if match:
                 cur_num = int(match.group(1))
@@ -364,6 +391,8 @@ def sort_inner_files():
         nzbget.editqueue("FileMoveTop", 0, "", [file_id])
     else:
         print("[INFO] Skipping sorting since could not find any rar-files")
+
+    return file_names
 
 
 # Remove current and any old temp files
@@ -395,6 +424,20 @@ def clean_up():
             os.remove(temp_file)
         except:
             print("[ERROR] Could not remove temp file " + temp_file)
+
+
+# Mark the nzb as a fake
+def mark_bad():
+    # Add post-processing parameter "PPSTATUS_FAKE" for nzb-file.
+    # Scripts running after fake detector can check the parameter like this:
+    # if os.environ.get('NZBPR_PPSTATUS_FAKE') == 'yes':
+    # 	 print('Marked as fake by another script')
+    print("[NZB] NZBPR_PPSTATUS_FAKE=yes")
+
+    # Special command telling NZBGet to mark nzb as bad. The nzb will
+    # be removed from queue and become status "FAILURE/BAD".
+    print("[NZB] MARK=BAD")
+    sys.stdout.flush()
 
 
 # Script body
@@ -439,8 +482,17 @@ def main():
     ):
         print("[INFO] Sorting inner files for earlier fake detection for %s" % NzbName)
         sys.stdout.flush()
-        sort_inner_files()
+        file_names = sort_inner_files()
         print("[NZB] NZBPR_FAKEDETECTOR_SORTED=yes")
+
+        # The file names listed in the nzb are known before anything is downloaded.
+        # Check them now so that e.g. a bare ".exe" posted under a release name is
+        # rejected before it is downloaded rather than after.
+        print("[DETAIL] Checking file names listed in nzb for %s" % NzbName)
+        if check_file_list(file_names):
+            mark_bad()
+            sys.exit(POSTPROCESS_NONE)
+
         if os.environ.get("NZBNA_EVENT") == "NZB_ADDED":
             sys.exit(POSTPROCESS_NONE)
 
@@ -449,16 +501,7 @@ def main():
 
     if detect_fake(NzbName, Directory):
         # A fake is detected
-        #
-        # Add post-processing parameter "PPSTATUS_FAKE" for nzb-file.
-        # Scripts running after fake detector can check the parameter like this:
-        # if os.environ.get('NZBPR_PPSTATUS_FAKE') == 'yes':
-        # 	 print('Marked as fake by another script')
-        print("[NZB] NZBPR_PPSTATUS_FAKE=yes")
-
-        # Special command telling NZBGet to mark nzb as bad. The nzb will
-        # be removed from queue and become status "FAILURE/BAD".
-        print("[NZB] MARK=BAD")
+        mark_bad()
     else:
         # Not a fake or at least doesn't look like a fake (yet).
         #
