@@ -1,0 +1,14 @@
+v3.2 (2026-10-07)
+- Check file names listed in NZB on NZB_ADDED event (early fake detection before download)
+- Fix BannedExtensions parsing: drop empty entries, case-insensitive matching
+- Fix clean_up() crash when temp folder doesn't exist
+- Add locales.source.json and Russian translation
+
+v3.1 (2024-XX-XX)
+- [previous release notes]
+
+v2.0 (2022-XX-XX)
+- Legacy NZBGet v22 support
+
+v1.7 (2020-XX-XX)
+- Python 2.x / older Python3 support
