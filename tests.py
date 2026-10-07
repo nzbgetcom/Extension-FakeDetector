@@ -83,6 +83,49 @@ class RequestWithFileId(http.server.BaseHTTPRequestHandler):
         self.wfile.write(response.encode("utf-8"))
 
 
+def make_listfiles_handler(response_file):
+    class RequestListFiles(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            with open(test_data_dir + "/" + response_file) as f:
+                data = json.load(f)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            formatted = json.dumps(data, separators=(",\n", " : "), indent=0)
+            self.wfile.write(formatted.encode("utf-8"))
+
+        def do_POST(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/xml")
+            self.end_headers()
+            data = '<?xml version="1.0" encoding="UTF-8"?><nzb></nzb>'
+            response = xmlrpc.client.dumps((data,), allow_none=False, encoding=None)
+            self.wfile.write(response.encode("utf-8"))
+
+    return RequestListFiles
+
+
+def run_with_server(handler):
+    server = http.server.HTTPServer((host, int(port)), handler)
+    thread = threading.Thread(target=server.serve_forever)
+    thread.start()
+    try:
+        return run_script()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+def set_nzb_added_env():
+    os.environ["NZBNA_NZBNAME"] = "nzb_test_file"
+    os.environ["NZBNA_CATEGORY"] = "tv"
+    os.environ["NZBNA_NZBID"] = "8"
+    os.environ["NZBNA_DIRECTORY"] = test_data_dir
+    os.environ["NZBNA_EVENT"] = "NZB_ADDED"
+    os.environ["NZBPR_FAKEDETECTOR_SORTED"] = "no"
+
+
 def run_script():
     sys.stdout.flush()
     proc = subprocess.Popen(
@@ -163,6 +206,17 @@ class Tests(unittest.TestCase):
         clean_up()
         self.assertEqual(code, SUCCESS)
 
+    def test_post_processing_bad_nzb_without_temp_folder(self):
+        # nzb marked bad before any file was downloaded: the temp folder was never created
+        set_defaults_env()
+        shutil.rmtree(tmp_dir + "/FakeDetector")
+        os.environ["NZBPP_STATUS"] = "FAILURE/BAD"
+        os.environ["NZBPR_PPSTATUS_FAKE"] = "yes"
+        [out, code, err] = run_script()
+        clean_up()
+        self.assertEqual(code, SUCCESS)
+        self.assertNotIn("Traceback", err + out)
+
     def test_detect_fake_files(self):
         set_defaults_env()
         file_name = "nzb_test_file"
@@ -203,6 +257,74 @@ class Tests(unittest.TestCase):
         thread.join()
         clean_up()
         self.assertEqual(code, SUCCESS)
+
+    def test_banned_extension_in_nzb_file_list_on_add(self):
+        set_defaults_env()
+        os.environ["NZBPO_BANNEDEXTENSIONS"] = ".exe, .scr"
+        set_nzb_added_env()
+        [out, code, err] = run_with_server(
+            make_listfiles_handler("nzbget_response_exe.json")
+        )
+        clean_up()
+        self.assertEqual(code, NONE)
+        self.assertIn("[NZB] MARK=BAD", out)
+        self.assertIn("[NZB] NZBPR_PPSTATUS_FAKEBAN=.exe", out)
+
+    def test_banned_extension_is_case_insensitive(self):
+        set_defaults_env()
+        os.environ["NZBPO_BANNEDEXTENSIONS"] = ".EXE"
+        set_nzb_added_env()
+        [out, code, err] = run_with_server(
+            make_listfiles_handler("nzbget_response_exe.json")
+        )
+        clean_up()
+        self.assertIn("[NZB] MARK=BAD", out)
+
+    def test_media_and_executable_in_nzb_file_list_on_add(self):
+        set_defaults_env()
+        os.environ["NZBPO_BANNEDEXTENSIONS"] = ""
+        set_nzb_added_env()
+        [out, code, err] = run_with_server(
+            make_listfiles_handler("nzbget_response_media_exe.json")
+        )
+        clean_up()
+        self.assertEqual(code, NONE)
+        self.assertIn("[NZB] MARK=BAD", out)
+
+    def test_clean_nzb_file_list_on_add(self):
+        set_defaults_env()
+        os.environ["NZBPO_BANNEDEXTENSIONS"] = ".exe"
+        set_nzb_added_env()
+        [out, code, err] = run_with_server(
+            make_listfiles_handler("nzbget_response.json")
+        )
+        clean_up()
+        self.assertEqual(code, NONE)
+        self.assertNotIn("MARK=BAD", out)
+
+    def test_empty_banned_extensions_ignores_files_without_extension(self):
+        set_defaults_env()
+        os.environ["NZBPO_BANNEDEXTENSIONS"] = ""
+        set_nzb_added_env()
+        [out, code, err] = run_with_server(
+            make_listfiles_handler("nzbget_response_obfuscated.json")
+        )
+        clean_up()
+        self.assertEqual(code, NONE)
+        self.assertNotIn("MARK=BAD", out)
+
+    def test_empty_entry_in_banned_extensions_does_not_hide_banned_file(self):
+        # A trailing comma leaves an empty entry in the option. A file without an
+        # extension listed before the banned file must not end the check early.
+        set_defaults_env()
+        os.environ["NZBPO_BANNEDEXTENSIONS"] = ".exe,"
+        set_nzb_added_env()
+        [out, code, err] = run_with_server(
+            make_listfiles_handler("nzbget_response_obfuscated_exe.json")
+        )
+        clean_up()
+        self.assertIn("[NZB] MARK=BAD", out)
+        self.assertIn("[NZB] NZBPR_PPSTATUS_FAKEBAN=.exe", out)
 
     def test_manifest(self):
         with open(root_dir + "/manifest.json", encoding="utf-8") as file:

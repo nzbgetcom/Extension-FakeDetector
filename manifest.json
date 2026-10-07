@@ -30,7 +30,11 @@
 				"BannedExtensions.",
 				"",
 				"Downloads which contain files with any of the following extensions will be marked as fake.",
-				"Extensions must be separated by a comma (eg: .wmv, .divx)."
+				"Extensions must be separated by a comma (eg: .wmv, .divx). Matching is case-insensitive.",
+				"",
+				"The file names listed in the nzb are checked as soon as it is added to the queue,",
+				"so a banned file posted as-is is rejected before anything is downloaded.",
+				"Files inside archives are checked as the archive volumes are downloaded."
 			],
 			"select": []
 		}
