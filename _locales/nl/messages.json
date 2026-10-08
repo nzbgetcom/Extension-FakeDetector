@@ -1,0 +1,6 @@
+{
+  "about": "Detecteert nzb's met nep mediabestanden.",
+  "bannedextensions_desc": "BannedExtensions.\n\nDownloads die bestanden bevatten met een van de volgende extensies worden gemarkeerd als nep.\nExtensies moeten worden gescheiden door een komma (bijv.: .wmv, .divx). Vergelijking is niet hoofdlettergevoelig.\n\nDe bestandsnamen in de nzb worden gecontroleerd zodra deze aan de wachtrij wordt toegevoegd,\nzodat een verboden bestand dat als zodanig is geplaatst, wordt geweigerd voordat er iets wordt gedownload.\nBestanden in archieven worden gecontroleerd terwijl de archiefvolumes worden gedownload.",
+  "description": "Als een nep bestand wordt gedetecteerd, wordt de download gemarkeerd als slecht. NZBGet verwijdert\nde download uit de wachtrij en (als de optie \"DeleteCleanupDisk\" actief is) worden de\ngedownloade bestanden van de schijf verwijderd. Als duplicaatverwerking actief is\n(optie \"DupeCheck\") wordt een ander duplicaat gekozen om te downloaden indien beschikbaar.\n\nDe status \"FAILURE/BAD\" wordt doorgegeven aan andere scripts en informeert hen over de fout.",
+  "requirements": "Dit script vereist dat Python 3.8.x op uw systeem is geïnstalleerd"
+}

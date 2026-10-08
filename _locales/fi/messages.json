@@ -1,0 +1,6 @@
+{
+  "about": "Tunnistaa nzb-tiedostot, jotka sisältävät väärennettyä mediasisältöä.",
+  "bannedextensions_desc": "BannedExtensions.\n\nLataukset, jotka sisältävät tiedostoja joillain seuraavista päätteistä, merkitään väärennöksiksi.\nPäätteet on erotettava pilkulla (esim.: .wmv, .divx). Vertailu ei ole kirjainkokoherkkä.\n\nNzb-tiedostossa luetellut tiedostonimet tarkistetaan heti, kun se lisätään jonoon,\njoten kielletty tiedosto sellaisenaan hylätään ennen kuin mitään ladataan.\nPakettien sisällä olevat tiedostot tarkistetaan, kun pakettien osia ladataan.",
+  "description": "Jos väärennös havaitaan, lataus merkitään virheelliseksi. NZBGet poistaa\nlatauksen jonosta ja (jos asetus \"DeleteCleanupDisk\" on aktiivinen)\nladatut tiedostot poistetaan levyltä. Jos kaksoiskappaleenkäsittely on aktiivinen\n(asetus \"DupeCheck\"), valitaan toinen kaksoiskappaleen lataus, jos sellainen on saatavilla.\n\nTila \"FAILURE/BAD\" välitetään muille skripteille ja ilmoittaa niille epäonnistumisesta.",
+  "requirements": "Tämä skripti vaatii Python 3.8.x:n asennettuna järjestelmääsi"
+}

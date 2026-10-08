@@ -1,0 +1,6 @@
+{
+  "about": "Hamis médiafájlokat tartalmazó nzb-ket észlel.",
+  "bannedextensions_desc": "BannedExtensions.\n\nAzok a letöltések, amelyek az alábbi kiterjesztések bármelyikével rendelkező fájlokat tartalmaznak, hamisként lesznek megjelölve.\nA kiterjesztéseket vesszővel kell elválasztani (pl.: .wmv, .divx). Az egyeztetés nem különbözteti meg a kis- és nagybetűket.\n\nAz nzb-ben felsorolt fájlneveket a sorhoz való hozzáadás pillanatában ellenőrzi,\nthus egy tiltott fájl, amelyet változtatás nélkül töltenek fel, elutasításra kerül, mielőtt bármi letöltődne.\nAz archívumokon belüli fájlokat az archívumkötetek letöltése közben ellenőrzi.",
+  "description": "Ha hamisítványt észlel, a letöltés rosszként lesz megjelölve. Az NZBGet eltávolítja\na letöltést a sorból, és (ha a \"DeleteCleanupDisk\" opció aktív) a\nletöltött fájlok törlődnek a lemezről. Ha a duplikátumkezelés aktív\n(\"DupeCheck\" opció), akkor egy másik duplikátum kerül kiválasztásra letöltésre, ha elérhető.\n\nA \"FAILURE/BAD\" állapot átadódik a többi szkriptnek, és tájékoztatja őket a hibáról.",
+  "requirements": "Ez a szkript megköveteli a Python 3.8.x telepítését a rendszerre"
+}

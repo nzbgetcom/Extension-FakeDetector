@@ -1,0 +1,6 @@
+{
+  "about": "Detecta nzbs com arquivos de mídia falsos.",
+  "bannedextensions_desc": "BannedExtensions.\n\nDownloads que contêm arquivos com qualquer uma das extensões a seguir serão marcados como falsos.\nAs extensões devem ser separadas por vírgula (ex: .wmv, .divx). A correspondência não diferencia maiúsculas de minúsculas.\n\nOs nomes de arquivos listados no nzb são verificados assim que ele é adicionado à fila,\nportanto, um arquivo proibido publicado como está é rejeitado antes que qualquer coisa seja baixada.\nArquivos dentro de pacotes compactados são verificados conforme os volumes do pacote são baixados.",
+  "description": "Se um arquivo falso for detectado, o download é marcado como ruim. O NZBGet remove\no download da fila e (se a opção \"DeleteCleanupDisk\" estiver ativa) os\narquivos baixados são excluídos do disco. Se o tratamento de duplicatas estiver ativo\n(opção \"DupeCheck\"), outro duplicado será escolhido para download, se disponível.\n\nO status \"FAILURE/BAD\" é passado para outros scripts e os informa sobre a falha.",
+  "requirements": "Este script requer que o Python 3.8.x esteja instalado no seu sistema"
+}
