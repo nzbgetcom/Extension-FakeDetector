@@ -1,0 +1,6 @@
+{
+  "about": "Erkennt NZBs mit gefälschten Mediendateien.",
+  "bannedextensions_desc": "BannedExtensions.\n\nDownloads, die Dateien mit einer der folgenden Erweiterungen enthalten, werden als gefälscht markiert.\nErweiterungen müssen durch ein Komma getrennt werden (z. B.: .wmv, .divx). Die Groß-/Kleinschreibung wird nicht berücksichtigt.\n\nDie in der NZB aufgeführten Dateinamen werden überprüft, sobald sie zur Warteschlange hinzugefügt werden,\nsodass eine verbotene Datei, die unverändert gepostet wurde, abgelehnt wird, bevor etwas heruntergeladen wird.\nDateien in Archiven werden überprüft, während die Archiv-Volumes heruntergeladen werden.",
+  "description": "Wenn eine gefälschte Datei erkannt wird, wird der Download als fehlerhaft markiert. NZBGet entfernt\nden Download aus der Warteschlange und (wenn die Option \"DeleteCleanupDisk\" aktiv ist) werden die\nheruntergeladenen Dateien von der Festplatte gelöscht. Wenn die Duplikatbehandlung aktiv ist\n(Option \"DupeCheck\"), wird ein anderes Duplikat zum Download ausgewählt, falls verfügbar.\n\nDer Status \"FAILURE/BAD\" wird an andere Skripte weitergegeben und informiert sie über den Fehler.",
+  "requirements": "Dieses Skript erfordert, dass Python 3.8.x auf Ihrem System installiert ist"
+}

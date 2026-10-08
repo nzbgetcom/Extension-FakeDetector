@@ -1,0 +1,6 @@
+{
+  "about": "Detectează fișiere NZB cu fișiere media false.",
+  "bannedextensions_desc": "BannedExtensions.\n\nDescărcările care conțin fișiere cu oricare dintre extensiile următoare vor fi marcate ca false.\nExtensiile trebuie separate prin virgulă (ex: .wmv, .divx). Potrivirea nu ține cont de majuscule.\n\nNumele fișierelor listate în nzb sunt verificate imediat ce acesta este adăugat în coadă,\nastfel un fișier interzis postat ca atare este respins înainte ca orice să fie descărcat.\nFișierele din arhive sunt verificate pe măsură ce volumele arhivei sunt descărcate.",
+  "description": "Dacă este detectat un fișier fals, descărcarea este marcată ca defectă. NZBGet elimină\ndescărcarea din coadă și (dacă opțiunea \"DeleteCleanupDisk\" este activă) fișierele\ndescărcate sunt șterse de pe disc. Dacă gestionarea duplicatelor este activă\n(opțiunea \"DupeCheck\"), atunci un alt duplicat este ales pentru descărcare dacă este disponibil.\n\nStatusul \"FAILURE/BAD\" este transmis altor scripturi și le informează despre eșec.",
+  "requirements": "Acest script necesită instalarea Python 3.8.x pe sistemul dumneavoastră"
+}
