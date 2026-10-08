@@ -1,0 +1,6 @@
+{
+  "about": "Wykrywa pliki NZB z fałszywymi plikami multimedialnymi.",
+  "bannedextensions_desc": "BannedExtensions.\n\nPobierania zawierające pliki z dowolnym z poniższych rozszerzeń zostaną oznaczone jako fałszywe.\nRozszerzenia muszą być oddzielone przecinkiem (np.: .wmv, .divx). Dopasowanie nie uwzględnia wielkości liter.\n\nNazwy plików wymienione w pliku nzb są sprawdzane natychmiast po dodaniu do kolejki,\nwięc zablokowany plik opublikowany bez zmian jest odrzucany przed pobraniem czegokolwiek.\nPliki wewnątrz archiwów są sprawdzane podczas pobierania woluminów archiwum.",
+  "description": "Jeśli zostanie wykryty fałszywy plik, pobieranie jest oznaczane jako złe. NZBGet usuwa\npobieranie z kolejki i (jeśli opcja \"DeleteCleanupDisk\" jest aktywna) pobrane\npliki są usuwane z dysku. Jeśli obsługa duplikatów jest aktywna\n(opcja \"DupeCheck\"), inny duplikat jest wybierany do pobrania, jeśli jest dostępny.\n\nStatus \"FAILURE/BAD\" jest przekazywany do innych skryptów i informuje je o niepowodzeniu.",
+  "requirements": "Ten skrypt wymaga zainstalowanego na systemie Python 3.8.x"
+}

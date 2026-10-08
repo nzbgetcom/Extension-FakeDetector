@@ -1,0 +1,18 @@
+{
+    "about": {
+        "message": "Detects nzbs with fake media files.",
+        "description": "Short description of the Fake Detector extension shown in settings."
+    },
+    "description": {
+        "message": "If a fake is detected the download is marked as bad. NZBGet removes\nthe download from queue and (if option \"DeleteCleanupDisk\" is active) the\ndownloaded files are deleted from disk. If duplicate handling is active\n(option \"DupeCheck\") then another duplicate is chosen for download if available.\n\nThe status \"FAILURE/BAD\" is passed to other scripts and informs them about failure.",
+        "description": "Full description of the extension shown in settings. DO NOT translate 'NZBGet'."
+    },
+    "requirements": {
+        "message": "This script requires Python 3.8.x to be installed on your system",
+        "description": "System requirements (each requirement is a separate string). DO NOT translate technical version strings (e.g., Python 3.8.x)."
+    },
+    "bannedextensions_desc": {
+        "message": "BannedExtensions.\n\nDownloads which contain files with any of the following extensions will be marked as fake.\nExtensions must be separated by a comma (eg: .wmv, .divx). Matching is case-insensitive.\n\nThe file names listed in the nzb are checked as soon as it is added to the queue,\nso a banned file posted as-is is rejected before anything is downloaded.\nFiles inside archives are checked as the archive volumes are downloaded.",
+        "description": "Help text for the BannedExtensions option in Fake Detector."
+    }
+}

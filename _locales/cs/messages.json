@@ -1,0 +1,6 @@
+{
+  "about": "Detekuje NZB soubory s falešnými mediálními soubory.",
+  "bannedextensions_desc": "BannedExtensions.\n\nStahování obsahující soubory s některou z následujících přípon budou označena jako falešná.\nPřípony musí být odděleny čárkou (např.: .wmv, .divx). Porovnávání nerozlišuje velikost písmen.\n\nNázvy souborů uvedené v NZB jsou zkontrolovány ihned po přidání do fronty,\ntakže zakázaný soubor zveřejněný tak, jak je, bude odmítnut ještě před stažením čehokoli.\nSoubory uvnitř archivů jsou kontrolovány při stahování svazků archivu.",
+  "description": "Pokud je detekován falešný soubor, stahování je označeno jako špatné. NZBGet odstraní\nstahování z fronty a (pokud je aktivní možnost \"DeleteCleanupDisk\") stažené\nsoubory jsou smazány z disku. Pokud je aktivní zpracování duplikátů\n(možnost \"DupeCheck\"), je pro stahování vybrán jiný duplikát, pokud je dostupný.\n\nStav \"FAILURE/BAD\" je předán ostatním skriptům a informuje je o selhání.",
+  "requirements": "Tento skript vyžaduje instalaci Python 3.8.x ve vašem systému"
+}

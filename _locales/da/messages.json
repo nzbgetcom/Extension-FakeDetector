@@ -1,0 +1,6 @@
+{
+  "about": "Registrerer nzb'er med falske mediefiler.",
+  "bannedextensions_desc": "BannedExtensions.\n\nDownloads, der indeholder filer med en af følgende filendelser, vil blive markeret som falske.\nFilendelser skal adskilles med et komma (f.eks.: .wmv, .divx). Matchning skelner ikke mellem store og små bogstaver.\n\nFilnavnene angivet i nzb'en kontrolleres, så snart den tilføjes til køen,\nså en forbudt fil postet som den er, afvises, inden noget downloades.\nFiler inde i arkiver kontrolleres, efterhånden som arkivvolumenerne downloades.",
+  "description": "Hvis en falsk fil opdages, markeres downloaden som dårlig. NZBGet fjerner\ndownloaden fra køen og (hvis indstillingen \"DeleteCleanupDisk\" er aktiv) slettes de\ndownloadede filer fra disken. Hvis håndtering af dubletter er aktiv\n(indstillingen \"DupeCheck\"), vælges en anden dublet til download, hvis tilgængelig.\n\nStatussen \"FAILURE/BAD\" sendes til andre scripts og informerer dem om fejlen.",
+  "requirements": "Dette script kræver, at Python 3.8.x er installeret på dit system"
+}

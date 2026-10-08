@@ -1,0 +1,6 @@
+{
+  "about": "Sahte medya dosyalarını içeren nzb'leri tespit eder.",
+  "bannedextensions_desc": "BannedExtensions.\n\nAşağıdaki uzantılara sahip dosyalar içeren indirmeler sahte olarak işaretlenecektir.\nUzantılar virgülle ayrılmalıdır (örn: .wmv, .divx). Eşleştirme büyük/küçük harf duyarsızdır.\n\nnzb'de listelenen dosya adları kuyruğa eklenir eklenmez kontrol edilir,\nbu nedenle yasaklı bir dosya olduğu gibi gönderilmişse hiçbir şey indirilmeden reddedilir.\nArşivlerin içindeki dosyalar, arşiv birimleri indirilirken kontrol edilir.",
+  "description": "Bir sahte tespit edilirse indirme işlemi kötü olarak işaretlenir. NZBGet indirmeyi\nkuyruktan kaldırır ve (\"DeleteCleanupDisk\" seçeneği etkinse) indirilen\ndosyalar diskten silinir. Yinelenen işleme etkinse\n(\"DupeCheck\" seçeneği) ve varsa başka bir yinelenen indirme için seçilir.\n\n\"FAILURE/BAD\" durumu diğer betiklere iletilir ve onları hata hakkında bilgilendirir.",
+  "requirements": "Bu betik, sisteminizde Python 3.8.x kurulu olmasını gerektirir"
+}
