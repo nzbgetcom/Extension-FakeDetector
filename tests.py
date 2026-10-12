@@ -369,12 +369,16 @@ def _load_main():
 
 
 class UnitTests(unittest.TestCase):
+    def setUp(self):
+        set_defaults_env()
+        os.environ["NZBNA_EVENT"] = ""
+
+    def tearDown(self):
+        clean_up()
+
     def test_connect_to_nzbget_encodes_special_chars(self):
-        os.environ["NZBOP_CONTROLIP"] = host
-        os.environ["NZBOP_CONTROLPORT"] = port
         os.environ["NZBOP_CONTROLUSERNAME"] = "user@test"
         os.environ["NZBOP_CONTROLPASSWORD"] = "p@ss#w0rd%test$"
-        os.environ["NZBNA_EVENT"] = ""
 
         module = _load_main()
 
@@ -388,12 +392,6 @@ class UnitTests(unittest.TestCase):
         self.assertIn("/xmlrpc", url)
 
     def test_connect_to_nzbget_normal_password(self):
-        os.environ["NZBOP_CONTROLIP"] = host
-        os.environ["NZBOP_CONTROLPORT"] = port
-        os.environ["NZBOP_CONTROLUSERNAME"] = username
-        os.environ["NZBOP_CONTROLPASSWORD"] = password
-        os.environ["NZBNA_EVENT"] = ""
-
         module = _load_main()
 
         with patch.object(module, "ServerProxy") as mock_proxy:
