@@ -29,6 +29,7 @@ import threading
 import json
 import unittest
 import shutil
+from unittest.mock import patch
 
 SUCCESS = 93
 NONE = 95
@@ -332,6 +333,76 @@ class Tests(unittest.TestCase):
                 json.loads(file.read())
             except ValueError as e:
                 self.fail("manifest.json is not valid.")
+
+    def test_sort_files_special_chars_password(self):
+        set_defaults_env()
+        os.environ["NZBOP_CONTROLPASSWORD"] = "p@ss#w0rd%test$"
+        file_name = "nzb_test_file"
+        os.environ["NZBNA_NZBNAME"] = file_name
+        os.environ["NZBNA_CATEGORY"] = "movies"
+        os.environ["NZBNA_NZBID"] = "8"
+        os.environ["NZBNA_DIRECTORY"] = test_data_dir
+        os.environ["NZBNA_EVENT"] = "FILE_DOWNLOADED"
+        os.environ["NZBPR_FAKEDETECTOR_SORTED"] = "no"
+
+        server = http.server.HTTPServer((host, int(port)), RequestWithFileId)
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        [out, code, err] = run_script()
+        server.shutdown()
+        server.server_close()
+        thread.join()
+        clean_up()
+        self.assertEqual(code, SUCCESS)
+        self.assertNotIn("Traceback", err + out)
+
+
+def _load_main():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("main", root_dir + "/main.py")
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except SystemExit:
+        pass
+    return module
+
+
+class UnitTests(unittest.TestCase):
+    def test_connect_to_nzbget_encodes_special_chars(self):
+        os.environ["NZBOP_CONTROLIP"] = host
+        os.environ["NZBOP_CONTROLPORT"] = port
+        os.environ["NZBOP_CONTROLUSERNAME"] = "user@test"
+        os.environ["NZBOP_CONTROLPASSWORD"] = "p@ss#w0rd%test$"
+        os.environ["NZBNA_EVENT"] = ""
+
+        module = _load_main()
+
+        with patch.object(module, "ServerProxy") as mock_proxy:
+            module.connect_to_nzbget()
+            url = mock_proxy.call_args[0][0]
+
+        self.assertIn("user%40test", url)
+        self.assertIn("p%40ss%23w0rd%25test%24", url)
+        self.assertIn("127.0.0.1:6789", url)
+        self.assertIn("/xmlrpc", url)
+
+    def test_connect_to_nzbget_normal_password(self):
+        os.environ["NZBOP_CONTROLIP"] = host
+        os.environ["NZBOP_CONTROLPORT"] = port
+        os.environ["NZBOP_CONTROLUSERNAME"] = username
+        os.environ["NZBOP_CONTROLPASSWORD"] = password
+        os.environ["NZBNA_EVENT"] = ""
+
+        module = _load_main()
+
+        with patch.object(module, "ServerProxy") as mock_proxy:
+            module.connect_to_nzbget()
+            url = mock_proxy.call_args[0][0]
+
+        self.assertIn("TestUser:TestPassword@", url)
+        self.assertIn("127.0.0.1:6789", url)
+        self.assertIn("/xmlrpc", url)
 
 
 if __name__ == "__main__":
