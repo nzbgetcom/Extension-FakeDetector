@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/nzbgetcom/Extension-FakeDetector",
 	"kind": "QUEUE/POST-PROCESSING",
 	"displayName": "FakeDetector",
-	"version": "3.2",
+	"version": "3.3",
 	"nzbgetMinVersion": "23.0",
 	"author": "Andrey Prygunkov",
 	"license": "GNU",
