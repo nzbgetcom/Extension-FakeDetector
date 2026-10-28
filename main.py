@@ -230,13 +230,23 @@ def list_all_rars(dir):
         # avoid .tmp files as corrupt
         if not "tmp" in file:
             try:
-                command = [unrar(), "vb", dir + "/" + file]
+                # "-p-" stops unrar from asking for a password; with stdin closed
+                # and a time limit a prompt can never hang the queue script.
+                command = [unrar(), "vb", "-p-", dir + "/" + file]
                 if verbose:
                     print("command: %s" % command)
                 proc = subprocess.Popen(
-                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    command,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
                 )
-                out_tmp, err = proc.communicate()
+                try:
+                    out_tmp, err = proc.communicate(timeout=120)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    out_tmp, err = proc.communicate()
+                    print("[WARNING] unrar timed out listing %s" % file)
                 out += out_tmp.decode()
                 result = proc.returncode
                 if verbose:
